@@ -1,1 +1,24 @@
-# paywaz-public-api
+# Paywaz Public API (Preview)
+
+Welcome to the **Paywaz Public API** — the developer gateway into our zero-fee, crypto-native payments infrastructure.
+
+Paywaz runs on **Solana Mainnet**, leveraging high-speed, low-cost settlement rails while providing an API-first architecture for merchants, enterprises, and global platforms.
+
+> **Note:** This is a public preview. Additional endpoints, SDKs, and documentation will be released as Paywaz transitions out of stealth.
+
+---
+
+## What You Can Do With the Paywaz API
+- Initiate zero-fee stablecoin or multi-crypto payments  
+- Auto-convert incoming tokens to hedged stablecoins (PZUSD, PZGBP, PZEUR, etc.)  
+- Create and manage checkout sessions  
+- Verify transaction status  
+- Retrieve settlement and payout data  
+- Integrate Paywaz with POS, ecommerce, mobile apps, or enterprise systems  
+
+---
+
+## API Specification
+An OpenAPI 3.0 specification will be published here as endpoints become publicly available.
+
+Current placeholder:  

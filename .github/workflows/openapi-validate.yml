@@ -3,8 +3,8 @@ name: OpenAPI Validation
 on:
   push:
     paths:
-      - "**/*.yaml"
-      - "**/*.yml"
+      - "openapi/**/*.yaml"
+      - "openapi/**/*.yml"
   pull_request:
 
 jobs:
@@ -16,4 +16,4 @@ jobs:
       - name: Validate OpenAPI spec
         uses: char0n/swagger-editor-validate@v1
         with:
-          definition-file: openapi.yaml
+          definition-file: openapi/openapi.yaml

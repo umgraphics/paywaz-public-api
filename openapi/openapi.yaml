@@ -1,3 +1,17 @@
-brew install openapi-generator
-# or
-npm install @openapitools/openapi-generator-cli
+openapi: 3.1.0
+
+info:
+  title: Paywaz Public API
+  description: >
+    Paywaz Public API — zero-fee, crypto-native payment infrastructure.
+    This specification is the canonical source for SDK generation.
+  version: 0.1.0
+
+servers:
+  - url: https://api.paywaz.com
+
+paths: {}
+
+components:
+  schemas: {}
+  securitySchemes: {}

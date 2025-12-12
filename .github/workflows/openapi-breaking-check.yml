@@ -1,0 +1,22 @@
+name: OpenAPI Breaking Change Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compare OpenAPI specs
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/specs \
+            openapitools/openapi-diff \
+            /specs/openapi.yaml \
+            /specs/openapi.yaml \
+            --fail-on-incompatible

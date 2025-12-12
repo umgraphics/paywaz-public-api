@@ -21,4 +21,6 @@ Paywaz runs on **Solana Mainnet**, leveraging high-speed, low-cost settlement ra
 ## API Specification
 An OpenAPI 3.0 specification will be published here as endpoints become publicly available.
 
-Current placeholder:  
+Current placeholder:
+Paywaz-Version: 2025-01-01
+

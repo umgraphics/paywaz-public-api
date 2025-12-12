@@ -20,13 +20,11 @@ paths:
       operationId: createPayment
       summary: Create a payment
       description: Initiates a zero-fee crypto or stablecoin payment
-      tags:
-        - Payments
+      tags: [Payments]
       parameters:
         - name: Idempotency-Key
           in: header
           required: true
-          style: simple
           schema:
             type: string
       requestBody:
@@ -42,30 +40,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
-              examples:
-                example:
-                  value:
-                    id: "pay_01HZXQ9K8M8F4A"
-                    status: "pending"
-                    amount: "1000"
-                    currency: "USDC"
-                    destination: "wallet_abc123"
-                    createdAt: "2025-01-12T10:15:30Z"
 
   /payments/{paymentId}:
     get:
       operationId: getPayment
       summary: Retrieve a payment
-      description: Retrieve the current status and details of a payment
-      tags:
-        - Payments
+      tags: [Payments]
       parameters:
         - name: paymentId
           in: path
           required: true
           schema:
             type: string
-          example: "pay_01HZXQ9K8M8F4A"
       responses:
         "200":
           description: Payment retrieved
@@ -80,25 +66,33 @@ paths:
     post:
       operationId: receivePaymentWebhook
       summary: Receive payment webhook events
-      description: Receives asynchronous payment lifecycle events from Paywaz
-      tags:
-        - Webhooks
-      security: []   # Webhooks must NOT require API auth
+      description: |
+        Receives asynchronous payment lifecycle events from Paywaz.
+
+        ### Webhook Signature Verification
+        Paywaz signs webhook events using HMAC-SHA256.
+
+        **Signature format**
+        ```
+        Paywaz-Signature: v1=<hex_signature>
+        ```
+
+        **Signing algorithm**
+        ```
+        signature = HMAC_SHA256(
+          secret = webhook_secret,
+          message = `${timestamp}.${raw_body}`
+        )
+        ```
+
+        **Replay protection**
+        - Reject events where |now − timestamp| > 300 seconds
+
+      tags: [Webhooks]
+      security: []
       parameters:
-        - name: Paywaz-Signature
-          in: header
-          required: true
-          style: simple
-          schema:
-            type: string
-          description: HMAC-SHA256 signature of the request payload
-        - name: Paywaz-Timestamp
-          in: header
-          required: true
-          style: simple
-          schema:
-            type: string
-          description: Unix timestamp (seconds) when the event was generated
+        - $ref: "#/components/parameters/PaywazSignature"
+        - $ref: "#/components/parameters/PaywazTimestamp"
       requestBody:
         required: true
         content:
@@ -120,52 +114,57 @@ components:
       in: header
       name: Authorization
 
+    PaywazWebhookSignature:
+      type: apiKey
+      in: header
+      name: Paywaz-Signature
+      description: |
+        HMAC-SHA256 webhook signature.
+        Format: `v1=<hex_digest>`
+
+  parameters:
+    PaywazSignature:
+      name: Paywaz-Signature
+      in: header
+      required: true
+      schema:
+        type: string
+
+    PaywazTimestamp:
+      name: Paywaz-Timestamp
+      in: header
+      required: true
+      schema:
+        type: string
+        description: Unix timestamp (seconds)
+
   schemas:
     CreatePaymentRequest:
       type: object
-      required:
-        - amount
-        - currency
-        - destination
+      required: [amount, currency, destination]
       properties:
         amount:
           type: string
-          description: Amount in smallest unit (e.g. cents, lamports)
-          example: "1000"
         currency:
           type: string
-          example: "USDC"
         destination:
           type: string
-          description: Destination wallet or account identifier
         autoConvert:
           type: boolean
           default: false
-          description: Auto-convert incoming funds to Paywaz hedged stablecoin
         metadata:
           type: object
           additionalProperties: true
-          description: Merchant-defined metadata (order_id, customer_id, etc)
 
     Payment:
       type: object
-      required:
-        - id
-        - status
-        - amount
-        - currency
-        - createdAt
+      required: [id, status, amount, currency, createdAt]
       properties:
         id:
           type: string
-          example: "pay_01HZXQ9K8M8F4A"
         status:
           type: string
-          enum:
-            - pending
-            - confirmed
-            - settled
-            - failed
+          enum: [pending, confirmed, settled, failed]
         amount:
           type: string
         currency:
@@ -185,17 +184,10 @@ components:
     WebhookEvent:
       type: object
       required:
-        - id
-        - type
-        - eventVersion
-        - livemode
-        - createdAt
-        - data
+        [id, type, eventVersion, livemode, createdAt, data]
       properties:
         id:
           type: string
-          description: Unique webhook event ID
-          example: "evt_01HZXY9M8A3P9"
         type:
           type: string
           enum:
@@ -205,57 +197,14 @@ components:
             - payment.failed
         eventVersion:
           type: string
-          description: Webhook payload version
-          example: "2025-01-01"
         livemode:
           type: boolean
-          description: Indicates whether the event was generated in live mode
         createdAt:
           type: string
           format: date-time
         data:
           type: object
-          required:
-            - payment
+          required: [payment]
           properties:
             payment:
               $ref: "#/components/schemas/Payment"
-
-import crypto from "crypto";
-
-export function verifyPaywazWebhook({
-  payload,
-  signature,
-  timestamp,
-  secret,
-}: {
-  payload: string;
-  signature: string;
-  timestamp: string;
-  secret: string;
-}) {
-  const signedPayload = `${timestamp}.${payload}`;
-
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(signedPayload)
-    .digest("hex");
-
-  const provided = signature.replace("v1=", "");
-
-  if (
-    !crypto.timingSafeEqual(
-      Buffer.from(expected),
-      Buffer.from(provided)
-    )
-  ) {
-    throw new Error("Invalid webhook signature");
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (Math.abs(now - Number(timestamp)) > 300) {
-    throw new Error("Webhook timestamp expired");
-  }
-
-  return true;
-}

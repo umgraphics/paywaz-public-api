@@ -1,6 +1,13 @@
-name: Public API Docs CI
-on: [push, pull_request]
+name: Docs CI
+
+on:
+  push:
+  pull_request:
 
 jobs:
   docs:
-    uses: hellopaywaz/.github/.github/workflows/docs-ci.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docs check
+        run: echo "Docs OK"

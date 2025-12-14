@@ -30,7 +30,12 @@ paths:
       tags: [Payments]
       parameters:
         - $ref: "#/components/parameters/PaywazVersion"
-        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Idempotency key for safely retrying create requests.
       requestBody:
         required: true
         content:
@@ -43,12 +48,6 @@ paths:
           headers:
             Paywaz-Version:
               $ref: "#/components/headers/PaywazVersionServed"
-            Deprecation:
-              $ref: "#/components/headers/Deprecation"
-            Sunset:
-              $ref: "#/components/headers/Sunset"
-            Link:
-              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -57,12 +56,10 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "409":
-          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalServerError"
+          $ref: "#/components/responses/InternalError"
 
   /payments/{paymentId}:
     get:
@@ -71,31 +68,38 @@ paths:
       tags: [Payments]
       parameters:
         - $ref: "#/components/parameters/PaywazVersion"
-        - $ref: "#/components/parameters/PaymentId"
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Payment retrieved
           headers:
             Paywaz-Version:
               $ref: "#/components/headers/PaywazVersionServed"
-            Deprecation:
-              $ref: "#/components/headers/Deprecation"
-            Sunset:
-              $ref: "#/components/headers/Sunset"
-            Link:
-              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+        "404":
+          description: Payment not found
+          headers:
+            Paywaz-Version:
+              $ref: "#/components/headers/PaywazVersionServed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalServerError"
+          $ref: "#/components/responses/InternalError"
 
   /webhooks/payments:
     post:
@@ -112,12 +116,12 @@ paths:
         - `Paywaz-Signature: v1=<hex_signature>`
 
         **Signing algorithm**
-        `signature = HMAC_SHA256(secret, "${timestamp}.${raw_body}")`
+        signature = HMAC_SHA256(secret, `${timestamp}.${raw_body}`)
 
         **Replay protection**
         Reject if |now − timestamp| > 300 seconds.
       tags: [Webhooks]
-      security: [] # public endpoint; verify authenticity via signature
+      security: [] # public endpoint; authenticity verified via signature
       parameters:
         - $ref: "#/components/parameters/PaywazTimestamp"
         - $ref: "#/components/parameters/PaywazSignature"
@@ -131,17 +135,9 @@ paths:
         "200":
           description: Webhook processed successfully
         "400":
-          description: Invalid payload or signature
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Signature verification failed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/Unauthorized"
 
 components:
   securitySchemes:
@@ -149,7 +145,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: APIKey
-      description: Use `Authorization: Bearer <api_key>`.
+      description: "Use `Authorization: Bearer <api_key>`."
 
   headers:
     PaywazVersionServed:
@@ -157,24 +153,6 @@ components:
       schema:
         type: string
         example: "2025-01-01"
-
-    Deprecation:
-      description: Indicates this API version is deprecated (if present).
-      schema:
-        type: boolean
-        example: true
-
-    Sunset:
-      description: RFC 1123 date when this API version will be sunset (if present).
-      schema:
-        type: string
-        example: "Sun, 06 Nov 1994 08:49:37 GMT"
-
-    Link:
-      description: Link to deprecation policy or migration guide (if present).
-      schema:
-        type: string
-        example: "<https://docs.paywaz.com/deprecations>; rel=\"deprecation\""
 
   parameters:
     PaywazVersion:
@@ -187,21 +165,6 @@ components:
       description: |
         API version to use for this request.
         Defaults to the account's pinned version if omitted.
-
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      required: true
-      schema:
-        type: string
-      description: Idempotency key for safely retrying create requests.
-
-    PaymentId:
-      name: paymentId
-      in: path
-      required: true
-      schema:
-        type: string
 
     PaywazTimestamp:
       name: Paywaz-Timestamp
@@ -219,64 +182,31 @@ components:
       schema:
         type: string
         example: "v1=0123abcd...deadbeef"
-      description: HMAC-SHA256 webhook signature. Format: `v1=<hex_digest>`.
+      description: |
+        HMAC-SHA256 webhook signature.
+        Format: `v1=<hex_digest>`
 
   responses:
     BadRequest:
       description: Bad request
-      headers:
-        Paywaz-Version:
-          $ref: "#/components/headers/PaywazVersionServed"
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-
     Unauthorized:
       description: Unauthorized
-      headers:
-        Paywaz-Version:
-          $ref: "#/components/headers/PaywazVersionServed"
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-
-    NotFound:
-      description: Not found
-      headers:
-        Paywaz-Version:
-          $ref: "#/components/headers/PaywazVersionServed"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-
-    Conflict:
-      description: Conflict (e.g., idempotency key reused with different payload)
-      headers:
-        Paywaz-Version:
-          $ref: "#/components/headers/PaywazVersionServed"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-
     TooManyRequests:
       description: Too many requests
-      headers:
-        Paywaz-Version:
-          $ref: "#/components/headers/PaywazVersionServed"
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-
-    InternalServerError:
+    InternalError:
       description: Internal server error
-      headers:
-        Paywaz-Version:
-          $ref: "#/components/headers/PaywazVersionServed"
       content:
         application/json:
           schema:
@@ -293,7 +223,7 @@ components:
           example: "49.99"
         currency:
           type: string
-          description: ISO currency or token symbol supported by Paywaz (e.g. "USD", "USDC", "PZUSD").
+          description: ISO currency or token symbol (e.g. "USD", "USDC", "PZUSD").
           example: "PZUSD"
         destination:
           type: string
@@ -308,12 +238,11 @@ components:
           additionalProperties: true
           description: Arbitrary key/value metadata.
           example:
-            invoiceId: "INV-10001"
-            customerId: "cus_123"
+            orderId: "12345"
 
     Payment:
       type: object
-      required: [id, status, amount, currency, createdAt]
+      required: [id, status, amount, currency, destination, createdAt]
       properties:
         id:
           type: string
@@ -329,17 +258,17 @@ components:
           type: string
           example: "PZUSD"
         destination:
-          type: ["string", "null"]
-          description: Destination identifier (may be omitted/hidden in some contexts).
+          type: string
           example: "merchant_wallet_or_destination_id"
         transactionHash:
-          type: ["string", "null"]
+          description: Blockchain transaction hash if available.
+          type: [string, "null"]
           example: null
         metadata:
           type: object
           additionalProperties: true
           example:
-            invoiceId: "INV-10001"
+            orderId: "12345"
         createdAt:
           type: string
           format: date-time
@@ -378,14 +307,18 @@ components:
 
     Error:
       type: object
-      required: [type, message]
+      required: [error]
       properties:
-        type:
-          type: string
-          example: "invalid_request"
-        message:
-          type: string
-          example: "Missing required field: destination"
-        requestId:
-          type: ["string", "null"]
-          example: "req_01HZXY..."
+        error:
+          type: object
+          required: [type, message]
+          properties:
+            type:
+              type: string
+              example: "invalid_request"
+            message:
+              type: string
+              example: "Missing required field: destination"
+            requestId:
+              type: [string, "null"]
+              example: "req_01HZXY..."

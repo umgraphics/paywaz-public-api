@@ -18,6 +18,16 @@ tags:
   - name: Payments
   - name: Webhooks
 
+headers:
+  Paywaz-Version:
+    $ref: "#/components/headers/PaywazVersionServed"
+  Deprecation:
+    $ref: "#/components/headers/Deprecation"
+  Sunset:
+    $ref: "#/components/headers/Sunset"
+  Link:
+    $ref: "#/components/headers/Link"
+
 paths:
   /payments:
     post:

@@ -5,7 +5,10 @@ info:
   version: 2025-01-01
   description: |
     Paywaz Public API.
-    Versioned via the `Paywaz-Version` request header.
+
+    Versioning:
+    - Clients may send `Paywaz-Version: YYYY-MM-DD` to pin behavior for a request.
+    - Responses include `Paywaz-Version` indicating the version that served the request.
 
 servers:
   - url: https://api.paywaz.com
@@ -16,23 +19,20 @@ security:
 
 tags:
   - name: Payments
+    description: Create and retrieve payments
   - name: Webhooks
+    description: Webhook event payloads and verification
 
 paths:
   /payments:
     post:
       operationId: createPayment
       summary: Create a payment
-      description: Initiates a zero-fee crypto or stablecoin payment
+      description: Initiates a zero-fee crypto or stablecoin payment.
       tags: [Payments]
       parameters:
         - $ref: "#/components/parameters/PaywazVersion"
-        - name: Idempotency-Key
-          in: header
-          required: true
-          schema:
-            type: string
-          description: Idempotency key for safely retrying create requests.
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: true
         content:
@@ -41,20 +41,11 @@ paths:
               $ref: "#/components/schemas/CreatePaymentRequest"
       responses:
         "201":
-          description: Payment created
-          headers:
-            Paywaz-Version:
-              $ref: "#/components/headers/PaywazVersionServed"
-            Deprecation:
-              $ref: "#/components/headers/Deprecation"
-            Sunset:
-              $ref: "#/components/headers/Sunset"
-            Link:
-              $ref: "#/components/headers/Link"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Payment"
+          $ref: "#/components/responses/PaymentCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /payments/{paymentId}:
     get:
@@ -70,31 +61,11 @@ paths:
             type: string
       responses:
         "200":
-          description: Payment retrieved
-          headers:
-            Paywaz-Version:
-              $ref: "#/components/headers/PaywazVersionServed"
-            Deprecation:
-              $ref: "#/components/headers/Deprecation"
-            Sunset:
-              $ref: "#/components/headers/Sunset"
-            Link:
-              $ref: "#/components/headers/Link"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Payment"
+          $ref: "#/components/responses/PaymentRetrieved"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
-          description: Payment not found
-          headers:
-            Paywaz-Version:
-              $ref: "#/components/headers/PaywazVersionServed"
-            Deprecation:
-              $ref: "#/components/headers/Deprecation"
-            Sunset:
-              $ref: "#/components/headers/Sunset"
-            Link:
-              $ref: "#/components/headers/Link"
+          $ref: "#/components/responses/NotFound"
 
   /webhooks/payments:
     post:
@@ -103,28 +74,25 @@ paths:
       description: |
         Receives asynchronous payment lifecycle events from Paywaz.
 
-        ### Webhook Signature Verification
-        Paywaz signs webhook events using HMAC-SHA256.
+        ## Webhook signature verification (HMAC-SHA256)
 
-        **Headers**
+        **Required headers**
         - `Paywaz-Timestamp: <unix_seconds>`
         - `Paywaz-Signature: v1=<hex_signature>`
 
         **Signing algorithm**
-        ```
-        signature = HMAC_SHA256(
-          secret = webhook_secret,
-          message = `${timestamp}.${raw_body}`
-        )
-        ```
+        `signature = HMAC_SHA256(secret, "${timestamp}.${raw_body}")`
 
         **Replay protection**
-        - Reject events where |now − timestamp| > 300 seconds
+        Reject if `|now - timestamp| > 300 seconds`.
+
+        **Important**
+        Verify the signature against the **raw request body bytes** (not parsed JSON).
       tags: [Webhooks]
       security: [] # webhooks are public; authenticity is via signature
       parameters:
-        - $ref: "#/components/parameters/PaywazSignature"
         - $ref: "#/components/parameters/PaywazTimestamp"
+        - $ref: "#/components/parameters/PaywazSignature"
       requestBody:
         required: true
         content:
@@ -142,36 +110,10 @@ paths:
 components:
   securitySchemes:
     ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: Authorization
-      description: |
-        API key auth. Use: `Authorization: Bearer <api_key>`
-
-  headers:
-    PaywazVersionServed:
-      schema:
-        type: string
-        example: "2025-01-01"
-      description: API version used to process this request.
-
-    Deprecation:
-      schema:
-        type: boolean
-        example: true
-      description: Indicates this API version is deprecated.
-
-    Sunset:
-      schema:
-        type: string
-        example: "Sun, 06 Nov 1994 08:49:37 GMT"
-      description: RFC 1123 date when this API version will be sunset.
-
-    Link:
-      schema:
-        type: string
-        example: '<https://docs.paywaz.com/deprecations>; rel="deprecation"'
-      description: Link to deprecation policy or migration guide.
+      type: http
+      scheme: bearer
+      bearerFormat: APIKey
+      description: Use `Authorization: Bearer <api_key>`
 
   parameters:
     PaywazVersion:
@@ -183,7 +125,15 @@ components:
         example: "2025-01-01"
       description: |
         API version to use for this request.
-        Defaults to the account's pinned version if omitted.
+        If omitted, the account's pinned/default version is used.
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Idempotency key for safely retrying create requests.
 
     PaywazTimestamp:
       name: Paywaz-Timestamp
@@ -205,6 +155,94 @@ components:
         HMAC-SHA256 webhook signature.
         Format: `v1=<hex_digest>`
 
+  headers:
+    PaywazVersionServed:
+      schema:
+        type: string
+        example: "2025-01-01"
+      description: API version used to process this request.
+
+    Deprecation:
+      schema:
+        type: string
+        example: "true"
+      description: Present when the served API version is deprecated.
+
+    Sunset:
+      schema:
+        type: string
+        example: "Sun, 06 Nov 1994 08:49:37 GMT"
+      description: RFC 1123 date when this API version will be sunset.
+
+    Link:
+      schema:
+        type: string
+        example: '<https://docs.paywaz.com/deprecations>; rel="deprecation"'
+      description: Link to deprecation policy or migration guide.
+
+  responses:
+    PaymentCreated:
+      description: Payment created
+      headers:
+        Paywaz-Version:
+          $ref: "#/components/headers/PaywazVersionServed"
+        Deprecation:
+          $ref: "#/components/headers/Deprecation"
+        Sunset:
+          $ref: "#/components/headers/Sunset"
+        Link:
+          $ref: "#/components/headers/Link"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Payment"
+
+    PaymentRetrieved:
+      description: Payment retrieved
+      headers:
+        Paywaz-Version:
+          $ref: "#/components/headers/PaywazVersionServed"
+        Deprecation:
+          $ref: "#/components/headers/Deprecation"
+        Sunset:
+          $ref: "#/components/headers/Sunset"
+        Link:
+          $ref: "#/components/headers/Link"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Payment"
+
+    BadRequest:
+      description: Bad request
+      headers:
+        Paywaz-Version:
+          $ref: "#/components/headers/PaywazVersionServed"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    Unauthorized:
+      description: Unauthorized
+      headers:
+        Paywaz-Version:
+          $ref: "#/components/headers/PaywazVersionServed"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    NotFound:
+      description: Not found
+      headers:
+        Paywaz-Version:
+          $ref: "#/components/headers/PaywazVersionServed"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
   schemas:
     CreatePaymentRequest:
       type: object
@@ -216,11 +254,11 @@ components:
           example: "49.99"
         currency:
           type: string
-          description: ISO currency or token symbol as supported by Paywaz (e.g. "USD", "USDC").
-          example: "USD"
+          description: ISO currency or token symbol (e.g. "USD", "USDC", "PZUSD").
+          example: "PZUSD"
         destination:
           type: string
-          description: Destination identifier (wallet address, account ID, or merchant destination).
+          description: Wallet address, account ID, or merchant destination identifier.
           example: "merchant_wallet_or_destination_id"
         autoConvert:
           type: boolean
@@ -228,11 +266,11 @@ components:
           description: If true, Paywaz may auto-convert to a preferred stablecoin.
         metadata:
           type: object
-          additionalProperties: true
           description: Arbitrary key/value metadata.
+          additionalProperties: {}
           example:
+            orderId: "12345"
             invoiceId: "INV-10001"
-            customerId: "cus_123"
 
     Payment:
       type: object
@@ -250,20 +288,20 @@ components:
           example: "49.99"
         currency:
           type: string
-          example: "USD"
+          example: "PZUSD"
         destination:
           type: string
-          nullable: true
           example: "merchant_wallet_or_destination_id"
         transactionHash:
-          type: string
-          nullable: true
+          type:
+            - "string"
+            - "null"
           example: null
         metadata:
           type: object
-          additionalProperties: true
+          additionalProperties: {}
           example:
-            invoiceId: "INV-10001"
+            orderId: "12345"
         createdAt:
           type: string
           format: date-time
@@ -271,13 +309,7 @@ components:
 
     WebhookEvent:
       type: object
-      required:
-        - id
-        - type
-        - eventVersion
-        - livemode
-        - createdAt
-        - data
+      required: [id, type, eventVersion, livemode, createdAt, data]
       properties:
         id:
           type: string
@@ -306,3 +338,23 @@ components:
           properties:
             payment:
               $ref: "#/components/schemas/Payment"
+
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          example: "https://docs.paywaz.com/errors/invalid_request"
+        title:
+          type: string
+          example: "Invalid request"
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+          example: "Missing required header: Idempotency-Key"
+        instance:
+          type: string
+          example: "req_01HZXY9M8A3P9"

@@ -1,17 +1,17 @@
-name: OpenAPI Validation
+name: Validate OpenAPI
 
 on:
+  workflow_dispatch:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Validate OpenAPI spec
-        uses: char0n/swagger-editor-validate@v1
+      - uses: actions/setup-node@v4
         with:
-          definition-file: openapi/openapi.yaml
+          node-version: 20
+      - run: npx @redocly/cli@latest lint openapi/openapi.yaml

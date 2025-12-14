@@ -18,16 +18,6 @@ tags:
   - name: Payments
   - name: Webhooks
 
-headers:
-  Paywaz-Version:
-    $ref: "#/components/headers/PaywazVersionServed"
-  Deprecation:
-    $ref: "#/components/headers/Deprecation"
-  Sunset:
-    $ref: "#/components/headers/Sunset"
-  Link:
-    $ref: "#/components/headers/Link"
-
 paths:
   /payments:
     post:
@@ -55,6 +45,12 @@ paths:
           headers:
             Paywaz-Version:
               $ref: "#/components/headers/PaywazVersionServed"
+            Deprecation:
+              $ref: "#/components/headers/Deprecation"
+            Sunset:
+              $ref: "#/components/headers/Sunset"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -78,6 +74,12 @@ paths:
           headers:
             Paywaz-Version:
               $ref: "#/components/headers/PaywazVersionServed"
+            Deprecation:
+              $ref: "#/components/headers/Deprecation"
+            Sunset:
+              $ref: "#/components/headers/Sunset"
+            Link:
+              $ref: "#/components/headers/Link"
           content:
             application/json:
               schema:
@@ -87,6 +89,12 @@ paths:
           headers:
             Paywaz-Version:
               $ref: "#/components/headers/PaywazVersionServed"
+            Deprecation:
+              $ref: "#/components/headers/Deprecation"
+            Sunset:
+              $ref: "#/components/headers/Sunset"
+            Link:
+              $ref: "#/components/headers/Link"
 
   /webhooks/payments:
     post:
@@ -109,31 +117,6 @@ paths:
           message = `${timestamp}.${raw_body}`
         )
         ```
-          headers:
-    PaywazVersionServed:
-      schema:
-        type: string
-        example: "2025-01-01"
-      description: API version used to process this request.
-
-    Deprecation:
-      schema:
-        type: boolean
-        example: true
-      description: Indicates this API version is deprecated.
-
-    Sunset:
-      schema:
-        type: string
-        example: "Sun, 06 Nov 1994 08:49:37 GMT"
-      description: RFC 1123 date when this API version will be sunset.
-
-    Link:
-      schema:
-        type: string
-        example: '<https://docs.paywaz.com/deprecations>; rel="deprecation"'
-      description: Link to deprecation policy or migration guide.
-
 
         **Replay protection**
         - Reject events where |now − timestamp| > 300 seconds
@@ -171,6 +154,24 @@ components:
         type: string
         example: "2025-01-01"
       description: API version used to process this request.
+
+    Deprecation:
+      schema:
+        type: boolean
+        example: true
+      description: Indicates this API version is deprecated.
+
+    Sunset:
+      schema:
+        type: string
+        example: "Sun, 06 Nov 1994 08:49:37 GMT"
+      description: RFC 1123 date when this API version will be sunset.
+
+    Link:
+      schema:
+        type: string
+        example: '<https://docs.paywaz.com/deprecations>; rel="deprecation"'
+      description: Link to deprecation policy or migration guide.
 
   parameters:
     PaywazVersion:

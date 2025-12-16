@@ -18,6 +18,21 @@ Paywaz runs on **Solana Mainnet**, leveraging high-speed, low-cost settlement ra
 
 ---
 
+# paywaz-public-api
+
+Public OpenAPI specification for the Paywaz API.
+
+## Files
+- `openapi.yaml` — OpenAPI 3.1 spec
+- `redocly.yaml` — Redocly lint config
+
+## Lint (locally)
+Requires Node.js 20+.
+
+```bash
+npx -y @redocly/cli@latest lint openapi.yaml
+
+
 ## API Specification
 An OpenAPI 3.0 specification will be published here as endpoints become publicly available.
 

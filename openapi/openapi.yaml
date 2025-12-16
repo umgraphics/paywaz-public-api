@@ -7,6 +7,10 @@ info:
     Paywaz Public API — the developer gateway into zero-fee, crypto-native payments.
     Supports stablecoins, Solana-native settlement, and enterprise-grade webhooks.
 
+license:
+  name: MIT
+  url: https://opensource.org/licenses/MIT
+
 servers:
   - url: https://api.paywaz.com
     description: Production

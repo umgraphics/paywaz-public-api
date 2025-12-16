@@ -1,0 +1,14 @@
+extends:
+  - recommended
+
+apis:
+  paywaz@v1:
+    root: ./openapi.yaml
+
+rules:
+  no-unused-components: error
+  operation-operationId: error
+  operation-summary: warn
+  operation-2xx-response: error
+  security-defined: error
+  tag-description: warn

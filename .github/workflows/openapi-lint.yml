@@ -1,0 +1,27 @@
+name: OpenAPI Lint
+
+on:
+  pull_request:
+    paths:
+      - "openapi.yaml"
+      - "openapi.yml"
+      - "redocly.yaml"
+      - ".github/workflows/openapi-lint.yml"
+  push:
+    branches: [ "main" ]
+    paths:
+      - "openapi.yaml"
+      - "openapi.yml"
+      - "redocly.yaml"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint OpenAPI (Redocly)
+        run: |
+          if [ -f "openapi.yaml" ]; then SPEC="openapi.yaml"; elif [ -f "openapi.yml" ]; then SPEC="openapi.yml"; else echo "No openapi.yaml or openapi.yml found" && exit 1; fi
+          npx -y @redocly/cli@latest lint "$SPEC"

